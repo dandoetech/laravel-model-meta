@@ -1,6 +1,25 @@
-# DanDoeTech PackageSkeleton
+# Laravel Model Meta (bridge)
 
-> A modern PHP package skeleton with CI, QA and quality reporting — ready for Packagist.
+Provides model metadata providers for the `dandoetech/openapi-generator`:
+- ArrayModelMetaProvider
+- CompositeModelMetaProvider
+- IntrospectingModelMetaProvider (Eloquent)
+
+## Install
+composer require dandoetech/laravel-model-meta
+
+## Configure
+php artisan vendor:publish --tag=model-meta-config
+
+Edit `config/model_meta.php`:
+- map `resource_to_model`
+- optionally add `array_fields`
+- keep provider order (array → introspecting)
+
+## Use
+The service provider binds `ModelMetaProviderInterface` to a composite.
+Your OpenAPI generator will automatically use it via dependency injection.
+
 
 ![Build](https://github.com/dandoetech/package-skeleton/actions/workflows/tests.yml/badge.svg)
 ![Static Analysis](https://github.com/dandoetech/package-skeleton/actions/workflows/static-analysis.yml/badge.svg)

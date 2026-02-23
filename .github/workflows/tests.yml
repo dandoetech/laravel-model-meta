@@ -37,26 +37,10 @@ jobs:
         run: composer install --prefer-dist --no-interaction --no-progress
 
       - name: Lint (CS dry-run)
-        run: composer cs:check
+        run: vendor/bin/php-cs-fixer fix --allow-risky=yes --dry-run
 
       - name: Static Analysis
-        run: composer stan
+        run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
 
       - name: Tests
-        run: composer test:coverage
-
-      - name: Upload coverage artifact
-        if: matrix.php == '8.4'
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage
-          path: coverage/clover.xml
-
-      - name: Upload coverage to Codacy (only once)
-        if: matrix.php == '8.4'
-        uses: codacy/codacy-coverage-reporter-action@v1
-        env:
-          CODACY_PROJECT_TOKEN: ${{ secrets.CODACY_PROJECT_TOKEN }}
-        with:
-          project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
-          coverage-reports: coverage/clover.xml
+        run: vendor/bin/phpunit --coverage-text --coverage-clover=coverage/clover.xml
