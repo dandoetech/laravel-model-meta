@@ -6,6 +6,7 @@ namespace DanDoeTech\LaravelModelMeta\ModelMeta;
 
 use DanDoeTech\LaravelModelMeta\Support\LaravelTypeMapper;
 use DanDoeTech\OpenApiGenerator\Contracts\ModelMetaProviderInterface;
+use DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface;
 use DanDoeTech\ResourceRegistry\Definition\FieldDefinition;
 use DanDoeTech\ResourceRegistry\Definition\FieldType;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +25,7 @@ final class IntrospectingModelMetaProvider implements ModelMetaProviderInterface
     }
 
     /**
-     * @return list<FieldDefinition>
+     * @return list<FieldDefinitionInterface>
      */
     public function fieldsFor(string $resourceKey): array
     {
@@ -58,8 +59,8 @@ final class IntrospectingModelMetaProvider implements ModelMetaProviderInterface
     }
 
     /**
-     * @param  list<string>          $columns
-     * @return list<FieldDefinition>
+     * @param  list<string>                   $columns
+     * @return list<FieldDefinitionInterface>
      */
     private function fromColumns(Model $model, array $columns): array
     {
@@ -83,7 +84,7 @@ final class IntrospectingModelMetaProvider implements ModelMetaProviderInterface
     /**
      * Fallback when schema listing is not available.
      *
-     * @return list<FieldDefinition>
+     * @return list<FieldDefinitionInterface>
      */
     private function fromCasts(Model $model): array
     {
