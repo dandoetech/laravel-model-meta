@@ -11,7 +11,8 @@
         "illuminate/support": "^10.0 || ^11.0 || ^12.0",
         "illuminate/database": "^10.0 || ^11.0 || ^12.0",
         "dandoetech/openapi-generator": "dev-main as 0.1.0",
-        "dandoetech/resource-registry": "dev-main as 0.1.0"
+        "dandoetech/resource-registry": "dev-main as 0.1.0",
+        "dandoetech/laravel-resource-registry": "dev-master"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.3",
