@@ -4,17 +4,15 @@ declare(strict_types=1);
 
 namespace DanDoeTech\LaravelModelMeta\Providers;
 
-use DanDoeTech\LaravelModelMeta\Adapters\ResourceRegistryModelMetaProvider;
 use DanDoeTech\LaravelModelMeta\Console\GenerateMigrationsCommand;
 use DanDoeTech\LaravelModelMeta\Console\GenerateModelsCommand;
-use DanDoeTech\LaravelModelMeta\Contracts\ModelMetaProvider;
 use DanDoeTech\LaravelModelMeta\ModelMeta\IntrospectingModelMetaProvider;
 use DanDoeTech\LaravelModelMeta\Services\MigrationGenerator;
 use DanDoeTech\LaravelModelMeta\Services\ModelGenerator;
-use DanDoeTech\LaravelOpenApiGenerator\Support\LaravelRegistryFactory;
 use DanDoeTech\OpenApiGenerator\Contracts\ModelMetaProviderInterface;
 use DanDoeTech\OpenApiGenerator\ModelMeta\ArrayModelMetaProvider;
 use DanDoeTech\OpenApiGenerator\ModelMeta\CompositeModelMetaProvider;
+use DanDoeTech\ResourceRegistry\Registry\Registry;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Filesystem\Filesystem;
@@ -26,10 +24,15 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
     {
         $this->mergeConfigFrom(__DIR__ . '/../../config/model_meta.php', 'model_meta');
 
-        $this->app->bind(ModelMetaProviderInterface::class, function ($app) {
-            $config = (array) $app['config']->get('model_meta', []);
+        $this->app->bind(ModelMetaProviderInterface::class, function (Application $app) {
+            /** @var \Illuminate\Contracts\Config\Repository $configRepo */
+            $configRepo = $app->make('config');
+            /** @var array{array_fields?: mixed, resource_to_model?: mixed, provider_order?: mixed} $config */
+            $config = (array) $configRepo->get('model_meta', []);
 
+            /** @var array<string, array<int, \DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface>> $arrayFields */
             $arrayFields = $config['array_fields'] ?? [];
+            /** @var array<string, class-string<\Illuminate\Database\Eloquent\Model>> $resourceToModel */
             $resourceToModel = $config['resource_to_model'] ?? [];
             $order = (array) ($config['provider_order'] ?? [
                 ArrayModelMetaProvider::class,
@@ -48,7 +51,19 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
             return new CompositeModelMetaProvider($providers);
         });
 
-        $this->addGenerators();
+        $this->app->singleton(MigrationGenerator::class, static function (Application $app): MigrationGenerator {
+            return new MigrationGenerator(
+                $app->make(Filesystem::class),
+                $app->make(Registry::class),
+            );
+        });
+
+        $this->app->singleton(ModelGenerator::class, static function (Application $app): ModelGenerator {
+            return new ModelGenerator(
+                $app->make(Filesystem::class),
+                $app->make(Registry::class),
+            );
+        });
     }
 
     public function boot(): void
@@ -65,34 +80,13 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
         }
     }
 
+    /** @return list<string> */
     public function provides(): array
     {
-        return [ModelMetaProviderInterface::class];
-    }
-
-    private function addGenerators(): void
-    {
-        $registry = LaravelRegistryFactory::make($this->app);
-
-        // Bind ModelMetaProvider to ResourceRegistry adapter
-        $this->app->singleton(ModelMetaProvider::class, static function (Application $app) use ($registry): ModelMetaProvider {
-            return new ResourceRegistryModelMetaProvider(
-                $registry,
-            );
-        });
-
-        $this->app->singleton(MigrationGenerator::class, static function (Application $app): MigrationGenerator {
-            return new MigrationGenerator(
-                $app->make(Filesystem::class),
-                $app->make(ModelMetaProvider::class),
-            );
-        });
-
-        $this->app->singleton(ModelGenerator::class, static function (Application $app): ModelGenerator {
-            return new ModelGenerator(
-                $app->make(Filesystem::class),
-                $app->make(ModelMetaProvider::class),
-            );
-        });
+        return [
+            ModelMetaProviderInterface::class,
+            MigrationGenerator::class,
+            ModelGenerator::class,
+        ];
     }
 }

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace DanDoeTech\LaravelModelMeta\Services;
 
-use DanDoeTech\LaravelModelMeta\Contracts\ModelMetaProvider;
-use DanDoeTech\LaravelModelMeta\DTO\FieldMeta;
-use DanDoeTech\LaravelModelMeta\DTO\ModelMeta;
+use DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface;
+use DanDoeTech\ResourceRegistry\Contracts\ResourceDefinitionInterface;
+use DanDoeTech\ResourceRegistry\Definition\FieldType;
+use DanDoeTech\ResourceRegistry\Definition\RelationType;
+use DanDoeTech\ResourceRegistry\Registry\Registry;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Str;
 
@@ -14,46 +16,49 @@ final class MigrationGenerator
 {
     public function __construct(
         private readonly Filesystem $files,
-        private readonly ModelMetaProvider $provider,
+        private readonly Registry $registry,
+        private readonly string $outputDir = '',
     ) {
     }
 
     /**
-     * @param array<int,string>|null $only
-     * @return array<int,string> absolute paths written
+     * @param  list<string>|null $only Resource keys to generate for (null = all)
+     * @return list<string>      Absolute paths written
      */
     public function generate(?array $only = null, bool $force = false): array
     {
         $written = [];
 
-        foreach ($this->provider->all() as $meta) {
-            if ($only !== null && !in_array($meta->name, $only, true)) {
+        foreach ($this->registry->all() as $resource) {
+            if ($only !== null && !\in_array($resource->getKey(), $only, true)) {
                 continue;
             }
 
-            $className = 'Create' . Str::studly(Str::plural($meta->table)) . 'Table';
-            $fileName  = date('Y_m_d_His') . '_create_' . Str::plural($meta->table) . '_table.php';
-            $path      = database_path('migrations/' . $fileName);
+            $tableName = Str::plural($resource->getKey());
+            $className = 'Create' . Str::studly($tableName) . 'Table';
+            $fileName = \date('Y_m_d_His') . '_create_' . $tableName . '_table.php';
+            $dir = $this->outputDir !== '' ? $this->outputDir : database_path('migrations');
+            $path = $dir . '/' . $fileName;
 
             if ($this->files->exists($path) && !$force) {
                 continue;
             }
 
-            $stub = $this->buildStub($className, $meta);
+            $stub = $this->buildStub($className, $resource);
             $this->files->put($path, $stub);
             $written[] = $path;
 
-            // bump timestamp to avoid collisions
-            usleep(1100000);
+            // Bump timestamp to avoid collisions between migration files
+            \usleep(1_100_000);
         }
 
         return $written;
     }
 
-    private function buildStub(string $className, ModelMeta $meta): string
+    private function buildStub(string $className, ResourceDefinitionInterface $resource): string
     {
-        $up   = $this->buildCreateTable($meta);
-        $down = "Schema::dropIfExists('" . addslashes(Str::plural($meta->table)) . "');";
+        $up = $this->buildCreateTable($resource);
+        $down = "Schema::dropIfExists('" . \addslashes(Str::plural($resource->getKey())) . "');";
 
         return <<<PHP
 <?php
@@ -77,93 +82,110 @@ return new class extends Migration
 PHP;
     }
 
-    private function buildCreateTable(ModelMeta $meta): string
+    private function buildCreateTable(ResourceDefinitionInterface $resource): string
     {
-        $tableName = addslashes(Str::plural($meta->table));
+        $tableName = \addslashes(Str::plural($resource->getKey()));
+
+        // Collect FK columns from BelongsTo relations
+        $foreignKeys = $this->collectForeignKeys($resource);
+
         $lines = [];
         $lines[] = "Schema::create('$tableName', function (Blueprint \$table): void {";
+        $lines[] = '    $table->id();';
 
-        $hasId = false;
-        foreach ($meta->fields as $f) {
-            if ($f->name === 'id' && (str_starts_with($f->type, 'id') || str_starts_with($f->type, 'int'))) {
-                $lines[] = '    $table->id();';
-                $hasId = true;
+        foreach ($resource->getFields() as $field) {
+            $name = $field->getName();
+
+            if ($name === 'id') {
                 continue;
             }
 
-            if ($meta->timestamps && ($f->name === 'created_at' || $f->name === 'updated_at')) {
+            if ($resource->isTimestamped() && \in_array($name, ['created_at', 'updated_at'], true)) {
                 continue;
             }
 
-            if ($meta->softDeletes && ($f->name === 'deleted_at')) {
+            if ($resource->usesSoftDeletes() && $name === 'deleted_at') {
                 continue;
             }
 
-            $lines[] = '    ' . $this->columnLine($f);
+            $lines[] = '    ' . $this->columnLine($field, isset($foreignKeys[$name]));
         }
 
-        if (!$hasId) {
-            array_splice($lines, 1, 0, '    $table->id();');
-        }
-
-        if ($meta->timestamps) {
+        if ($resource->isTimestamped()) {
             $lines[] = '    $table->timestamps();';
         }
-        if ($meta->softDeletes) {
+        if ($resource->usesSoftDeletes()) {
             $lines[] = '    $table->softDeletes();';
         }
 
-        foreach ($meta->fields as $f) {
-            if ($f->foreignKey !== null) {
-                $fk       = $f->foreignKey;
-                $onDelete = $fk->onDelete ? "->onDelete('{$fk->onDelete}')" : '';
-                $onUpdate = $fk->onUpdate ? "->onUpdate('{$fk->onUpdate}')" : '';
-                $lines[]  = "    \$table->foreign('{$f->name}')->references('{$fk->references}')->on('{$fk->on}')" . $onDelete . $onUpdate . ';';
-            }
+        foreach ($foreignKeys as $column => $fk) {
+            $targetTable = \addslashes($fk['on']);
+            $references = $fk['references'];
+            $lines[] = "    \$table->foreign('{$column}')->references('{$references}')->on('{$targetTable}');";
         }
 
         $lines[] = '});';
 
-        return implode("\n", $lines);
+        return \implode("\n", $lines);
     }
 
-    private function columnLine(FieldMeta $f): string
+    /**
+     * @return array<string, array{references: string, on: string}>
+     */
+    private function collectForeignKeys(ResourceDefinitionInterface $resource): array
     {
-        $base = match (true) {
-            str_starts_with($f->type, 'uuid')       => "\$table->uuid('{$f->name}')",
-            str_starts_with($f->type, 'string')     => "\$table->string('{$f->name}'" . (str_contains($f->type, ':') ? ', ' . (int) substr(strstr($f->type, ':'), 1) : '') . ')',
-            str_starts_with($f->type, 'text')       => "\$table->text('{$f->name}')",
-            str_starts_with($f->type, 'longText')   => "\$table->longText('{$f->name}')",
-            str_starts_with($f->type, 'integer') || str_starts_with($f->type, 'int') => "\$table->integer('{$f->name}')",
-            str_starts_with($f->type, 'bigint') || str_starts_with($f->type, 'bigInteger') => "\$table->bigInteger('{$f->name}')",
-            str_starts_with($f->type, 'boolean') || str_starts_with($f->type, 'bool') => "\$table->boolean('{$f->name}')",
-            str_starts_with($f->type, 'decimal')    => (function () use ($f): string {
-                $param = str_contains($f->type, ':') ? substr(strstr($f->type, ':'), 1) : '10,2';
-                return "\$table->decimal('{$f->name}', {$param})";
-            })(),
-            str_starts_with($f->type, 'float')      => "\$table->float('{$f->name}')",
-            str_starts_with($f->type, 'json')       => "\$table->json('{$f->name}')",
-            str_starts_with($f->type, 'datetime')   => "\$table->dateTime('{$f->name}')",
-            str_starts_with($f->type, 'date')       => "\$table->date('{$f->name}')",
-            str_starts_with($f->type, 'time')       => "\$table->time('{$f->name}')",
-            str_starts_with($f->type, 'timestamp')  => "\$table->timestamp('{$f->name}')",
-            default                                  => "\$table->string('{$f->name}')",
-        };
+        $foreignKeys = [];
+
+        foreach ($resource->getRelations() as $relation) {
+            if ($relation->getType() !== RelationType::BelongsTo) {
+                continue;
+            }
+
+            $fkColumn = $relation->getForeignKey()
+                ?? Str::snake($relation->getName()) . '_id';
+
+            $foreignKeys[$fkColumn] = [
+                'references' => $relation->getRelatedKey() ?? 'id',
+                'on'         => Str::plural($relation->getTarget()),
+            ];
+        }
+
+        return $foreignKeys;
+    }
+
+    private function columnLine(FieldDefinitionInterface $field, bool $isForeignKey = false): string
+    {
+        $name = $field->getName();
+
+        if ($isForeignKey) {
+            $base = "\$table->unsignedBigInteger('{$name}')";
+        } else {
+            $base = match ($field->getType()) {
+                FieldType::String   => "\$table->string('{$name}')",
+                FieldType::Integer  => "\$table->integer('{$name}')",
+                FieldType::Float    => "\$table->float('{$name}')",
+                FieldType::Boolean  => "\$table->boolean('{$name}')",
+                FieldType::DateTime => "\$table->dateTime('{$name}')",
+                FieldType::Json     => "\$table->json('{$name}')",
+            };
+        }
 
         $suffix = '';
-        if ($f->nullable) {
+        if ($field->isNullable()) {
             $suffix .= '->nullable()';
         }
-        if ($f->default !== null) {
-            $def = is_string($f->default) ? "'" . addslashes($f->default) . "'" : var_export($f->default, true);
+        if ($field->getDefault() !== null) {
+            $def = \is_string($field->getDefault())
+                ? "'" . \addslashes($field->getDefault()) . "'"
+                : \var_export($field->getDefault(), true);
             $suffix .= "->default({$def})";
         }
-        if ($f->comment !== null) {
-            $suffix .= "->comment('".addslashes($f->comment)."')";
+        if ($field->getComment() !== null) {
+            $suffix .= "->comment('" . \addslashes($field->getComment()) . "')";
         }
-        if ($f->unique) {
+        if ($field->isUnique()) {
             $suffix .= '->unique()';
-        } elseif ($f->index) {
+        } elseif ($field->isIndexed()) {
             $suffix .= '->index()';
         }
 

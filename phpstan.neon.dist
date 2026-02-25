@@ -7,4 +7,8 @@ parameters:
   checkGenericClassInNonGenericObjectType: true
   checkMissingIterableValueType: true
   checkImplicitMixed: true
-  reportUnmatchedIgnoredErrors: true
+  reportUnmatchedIgnoredErrors: false
+  ignoreErrors:
+    # Laravel helper functions are provided at runtime by illuminate/foundation
+    - '#Function database_path not found\.#'
+    - '#Function base_path not found\.#'
