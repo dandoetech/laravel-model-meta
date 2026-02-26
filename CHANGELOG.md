@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-02-26
+
 ### Added
 - `model-meta:generate-models` artisan command with `--only` and `--force` options
 - `model-meta:generate-migrations` artisan command with `--only` and `--force` options
