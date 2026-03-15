@@ -150,7 +150,7 @@ Generates timestamped migration files. Maps field types, applies nullable/unique
 
 ## Configuration
 
-`config/model_meta.php`:
+`config/ddt_model_meta.php`:
 
 ```php
 return [
