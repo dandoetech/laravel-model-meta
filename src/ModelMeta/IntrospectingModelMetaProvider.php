@@ -46,6 +46,7 @@ final class IntrospectingModelMetaProvider implements ModelMetaProviderInterface
             /** @var SchemaBuilder $schema */
             $schema = Schema::connection($model->getConnectionName());
             if ($schema->hasTable($table)) {
+                /** @var list<string> $columns */
                 $columns = $schema->getColumnListing($table);
                 if ($columns !== []) {
                     return $this->fromColumns($model, $columns);
