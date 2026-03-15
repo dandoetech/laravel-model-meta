@@ -4,10 +4,10 @@
     "type": "library",
     "license": "MIT",
     "authors": [{ "name": "Danilo Doelle", "email": "oss@dandoe.tech" }],
-    "homepage": "https://github.com/dandoe-tech/laravel-model-meta",
+    "homepage": "https://github.com/dandoetech/laravel-model-meta",
     "keywords": ["php", "laravel", "eloquent", "model", "migration", "code-generation"],
     "require": {
-        "php": "^8.2 || ^8.3 || ^8.4",
+        "php": "^8.2",
         "illuminate/console": "^10.0 || ^11.0 || ^12.0",
         "illuminate/filesystem": "^10.0 || ^11.0 || ^12.0",
         "illuminate/support": "^10.0 || ^11.0 || ^12.0",

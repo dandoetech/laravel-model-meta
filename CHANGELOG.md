@@ -20,4 +20,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `IntrospectingModelMetaProvider` reading field metadata from existing Eloquent models via schema or casts
 - `LaravelTypeMapper` mapping Laravel column names and cast types to `FieldType` enum
 - `ModelMetaServiceProvider` with composite provider pattern and deferred binding
-- `model_meta.php` config with `resource_to_model`, `array_fields`, and `provider_order` options
+- `ddt_model_meta.php` config with `resource_to_model`, `array_fields`, and `provider_order` options
