@@ -22,13 +22,13 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
 {
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../../config/model_meta.php', 'model_meta');
+        $this->mergeConfigFrom(__DIR__ . '/../../config/ddt_model_meta.php', 'ddt_model_meta');
 
         $this->app->bind(ModelMetaProviderInterface::class, function (Application $app) {
             /** @var \Illuminate\Contracts\Config\Repository $configRepo */
             $configRepo = $app->make('config');
             /** @var array{array_fields?: mixed, resource_to_model?: mixed, provider_order?: mixed} $config */
-            $config = (array) $configRepo->get('model_meta', []);
+            $config = (array) $configRepo->get('ddt_model_meta', []);
 
             /** @var array<string, array<int, \DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface>> $arrayFields */
             $arrayFields = $config['array_fields'] ?? [];
@@ -69,7 +69,7 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
     public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/../../config/model_meta.php' => $this->app->configPath('model_meta.php'),
+            __DIR__ . '/../../config/ddt_model_meta.php' => $this->app->configPath('ddt_model_meta.php'),
         ], 'model-meta-config');
 
         if ($this->app->runningInConsole()) {
