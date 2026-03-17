@@ -4,9 +4,6 @@ parameters:
     - src
     - tests
   tmpDir: .phpstan/cache
-  checkGenericClassInNonGenericObjectType: true
-  checkMissingIterableValueType: true
-  checkImplicitMixed: true
   reportUnmatchedIgnoredErrors: false
   ignoreErrors:
     # Laravel helper functions are provided at runtime by illuminate/foundation

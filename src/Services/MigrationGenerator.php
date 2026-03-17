@@ -37,7 +37,12 @@ final class MigrationGenerator
             $tableName = Str::plural($resource->getKey());
             $className = 'Create' . Str::studly($tableName) . 'Table';
             $fileName = \date('Y_m_d_His') . '_create_' . $tableName . '_table.php';
-            $dir = $this->outputDir !== '' ? $this->outputDir : database_path('migrations');
+            if ($this->outputDir !== '') {
+                $dir = $this->outputDir;
+            } else {
+                /** @var string $dir */
+                $dir = database_path('migrations');
+            }
             $path = $dir . '/' . $fileName;
 
             if ($this->files->exists($path) && !$force) {

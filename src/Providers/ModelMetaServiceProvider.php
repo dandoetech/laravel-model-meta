@@ -30,7 +30,7 @@ final class ModelMetaServiceProvider extends ServiceProvider implements Deferrab
             /** @var array{array_fields?: mixed, resource_to_model?: mixed, provider_order?: mixed} $config */
             $config = (array) $configRepo->get('ddt_model_meta', []);
 
-            /** @var array<string, array<int, \DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface>> $arrayFields */
+            /** @var array<string, list<\DanDoeTech\ResourceRegistry\Contracts\FieldDefinitionInterface>> $arrayFields */
             $arrayFields = $config['array_fields'] ?? [];
             /** @var array<string, class-string<\Illuminate\Database\Eloquent\Model>> $resourceToModel */
             $resourceToModel = $config['resource_to_model'] ?? [];

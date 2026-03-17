@@ -23,8 +23,8 @@ final class GenerateMigrationsCommand extends Command
 
     public function handle(): int
     {
-        /** @var array<int,string> $only */
-        $only = (array) $this->option('only');
+        /** @var list<string> $only */
+        $only = \array_values((array) $this->option('only'));
         $force = (bool) $this->option('force');
 
         $written = $this->generator->generate($only === [] ? null : $only, $force);
