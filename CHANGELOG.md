@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Model and migration generation support for new FieldTypes: `Date`, `Text`, `Email`, `Url`, `Enum`
+
 ## [0.1.0] - 2026-03-15
 
 ### Changed

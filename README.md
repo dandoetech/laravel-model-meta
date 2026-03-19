@@ -147,6 +147,11 @@ Generates timestamped migration files. Maps field types, applies nullable/unique
 | `Boolean` | `'boolean'` | `$table->boolean()` |
 | `DateTime` | `'datetime'` | `$table->dateTime()` |
 | `Json` | `'array'` | `$table->json()` |
+| `Date` | `'date'` | `$table->date()` |
+| `Text` | *(none)* | `$table->text()` |
+| `Email` | *(none)* | `$table->string()` |
+| `Url` | *(none)* | `$table->string()` |
+| `Enum` | *(none)* | `$table->string()` |
 
 ## Configuration
 
