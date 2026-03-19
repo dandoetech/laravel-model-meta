@@ -139,7 +139,8 @@ PHP;
                 FieldType::Float    => 'float',
                 FieldType::Json     => 'array',
                 FieldType::DateTime => 'datetime',
-                FieldType::String   => null,
+                FieldType::Date     => 'date',
+                FieldType::String, FieldType::Text, FieldType::Email, FieldType::Url, FieldType::Enum => null,
             };
 
             if ($cast !== null) {

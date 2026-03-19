@@ -166,11 +166,13 @@ PHP;
             $base = "\$table->unsignedBigInteger('{$name}')";
         } else {
             $base = match ($field->getType()) {
-                FieldType::String   => "\$table->string('{$name}')",
+                FieldType::String, FieldType::Email, FieldType::Url, FieldType::Enum => "\$table->string('{$name}')",
+                FieldType::Text     => "\$table->text('{$name}')",
                 FieldType::Integer  => "\$table->integer('{$name}')",
                 FieldType::Float    => "\$table->float('{$name}')",
                 FieldType::Boolean  => "\$table->boolean('{$name}')",
                 FieldType::DateTime => "\$table->dateTime('{$name}')",
+                FieldType::Date     => "\$table->date('{$name}')",
                 FieldType::Json     => "\$table->json('{$name}')",
             };
         }
