@@ -1,5 +1,7 @@
 # Laravel Model Meta
 
+> **Pre-release** — Architecture by senior tech lead, implementation largely AI-assisted with human review. Not fully reviewed. Architecture may change before v1.0.0.
+
 Generate Eloquent Models and Migrations from Resource Registry definitions. Also provides model introspection for the OpenAPI generator.
 
 ## Installation
