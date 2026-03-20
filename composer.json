@@ -26,9 +26,9 @@
         "illuminate/filesystem": "^11.0 || ^12.0",
         "illuminate/support": "^11.0 || ^12.0",
         "illuminate/database": "^11.0 || ^12.0",
-        "dandoetech/openapi-generator": "^0.1",
-        "dandoetech/resource-registry": "^0.1",
-        "dandoetech/laravel-resource-registry": "^0.1"
+        "dandoetech/openapi-generator": "^0.1 || ^0.2",
+        "dandoetech/resource-registry": "^0.1 || ^0.2",
+        "dandoetech/laravel-resource-registry": "^0.1 || ^0.2"
     },
     "require-dev": {
         "phpunit/phpunit": "^11.3",
